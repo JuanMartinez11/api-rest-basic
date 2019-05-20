@@ -3,53 +3,76 @@
 
 class IBApi{
 
-    public $method_request;
 
-    public $uri;
+    public $route;
 
-    public $constents;
+    public $endPoint = []; 
 
-    public $messages;
+    protected $basePath = 'rest';
 
-    public $version;
+    public $format_support = ['JSON','XML','TEXT/PLAIN'];
 
-    public $headers;
+    public $format;
 
-    public $body;
+    const CHARSET = 'UTF-8';
+
+
 
 
     public function __construct(){
 
+        $this->request = new IBRequest($_SERVER['REQUEST_METHOD']);
+        
+        $this->request->setGetParams($_GET);
+        $this->request->setBodyParams($_POST);
+        $this->request->setHeaders($_SERVER);
 
     }
 
-    public function get(){
+    public function setFormat($format){
 
+        if(in_array($format,$this->format_support)){
+            $this->format = 'application/'. strtolower($format);
+        }else{
+            echo "Format {$format} not support";
+        }
     }
+
+    public function registerRoute($path, $arg = []){
+
+
+        $this->setFormat($arg['format']);
+        $this->endPoint[] = new IBRoute($this->basePath, $path, $arg['callback'], $arg['method']);
+    }
+
+
+    public function request(){
+
+
+        $this->request->setHeader('Content-Type',$this->format.'; charset='.self::CHARSET);
+      
+      /*$this->request->setHeader('Content-Type',self::CONTENT_TYPE.'; charset='.self::CHARSET);
+
+      //return  json_encode($this->request->getParams());
+      ;
+      echo "<pre>";
+      var_dump($this->request->getHeaders());*/
+
+      foreach($this->endPoint as $endPoint){
     
-    public function post(){
-        
+            if($endPoint->match($this->request->route)){
+                call_user_func($endPoint->callback);
+            }else{
+                return new IBResponse(404);  
+            }
+
+      }
+
+
     }
 
-    public function put(){
-        
-    }
 
-    public function redirect(){
-        
-    }
-
-    public function cache(){
-        
-    }
-
-    public function getHeader(){
-        
-    }
-
-    public function getBody(){
-        
-    }
+    
 
 }
 
